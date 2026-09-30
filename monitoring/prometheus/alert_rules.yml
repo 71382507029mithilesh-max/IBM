@@ -1,0 +1,42 @@
+groups:
+  - name: stayease_alerts
+    rules:
+      # 1. API Down Alert
+      - alert: HotelBookingAPIDown
+        expr: up{job="hotel-booking-api"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "StayEase Hotel Booking API backend is unreachable"
+          description: "Instance {{ $labels.instance }} has been down for more than 30 seconds. Traffic must be redirected to standby instance."
+
+      # 2. Database Health Alert
+      - alert: DatabaseConnectionDegraded
+        expr: hotel_database_health_status == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection failed in Hotel Booking API"
+          description: "Backend reports database connection failure. Failover mechanism activated."
+
+      # 3. High HTTP Error Rate Alert (Auto-scaling / Incident trigger)
+      - alert: HighHttpErrorRate
+        expr: sum(rate(http_errors_total[2m])) / sum(rate(http_requests_total[2m])) > 0.05
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HTTP error rate exceeds 5%"
+          description: "More than 5% of hotel booking requests are returning 4xx or 5xx codes."
+
+      # 4. High Latency Alert
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 1.5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "95th percentile request latency exceeds 1.5 seconds"
+          description: "Application response time is degrading. Auto-scaling policy should consider spawning additional compute nodes."

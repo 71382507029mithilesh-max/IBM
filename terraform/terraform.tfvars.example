@@ -1,0 +1,19 @@
+# ==========================================================
+# StayEase - Example Terraform Variable Definitions
+# Copy to terraform.tfvars and fill with your environment values
+# ==========================================================
+
+aws_region           = "us-east-1"
+environment          = "production"
+vpc_cidr             = "10.0.0.0/16"
+instance_type        = "t3.medium"
+key_name             = "stayease-keypair"
+
+asg_min_size         = 2
+asg_max_size         = 6
+asg_desired_capacity = 2
+
+db_instance_class    = "db.t3.micro"
+db_name              = "hotel_booking_db"
+db_username          = "hotel_admin"
+db_password          = "ChangeThisSecurePassword2026!"

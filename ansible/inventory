@@ -1,0 +1,20 @@
+# ==========================================================
+# StayEase Hotel Booking - Ansible Inventory
+# ==========================================================
+
+[app_servers]
+app-server-1 ansible_host=10.0.11.101 ansible_user=ubuntu
+app-server-2 ansible_host=10.0.12.102 ansible_user=ubuntu
+
+[db_servers]
+db-primary ansible_host=10.0.21.50 ansible_user=ubuntu
+
+[monitoring_servers]
+mon-server-1 ansible_host=10.0.1.80 ansible_user=ubuntu
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_private_key_file=~/.ssh/stayease-keypair.pem
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+environment_name=production
+app_port=5000

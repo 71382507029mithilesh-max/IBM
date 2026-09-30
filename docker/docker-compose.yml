@@ -1,0 +1,117 @@
+services:
+  # 1. Database Service - MySQL 8.0
+  db:
+    image: mysql:8.0
+    container_name: stayease-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_secure_password_2026
+      MYSQL_DATABASE: hotel_booking_db
+      MYSQL_USER: hotel_user
+      MYSQL_PASSWORD: hotel_password_secure_2026
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ../database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ../database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+    networks:
+      - hotel-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "hotel_user", "-photel_password_secure_2026"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Backend API Service - Python Flask
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: stayease-backend
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: production
+      PORT: 5000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: hotel_user
+      DB_PASSWORD: hotel_password_secure_2026
+      DB_NAME: hotel_booking_db
+      SECRET_KEY: stayease-production-secret-key-cloud-2026
+      JWT_SECRET_KEY: stayease-jwt-cloud-secret-key-2026
+      USE_SQLITE_FALLBACK: "false"
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - hotel-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # 3. Frontend Web Client - React + Nginx
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: stayease-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - hotel-network
+
+  # 4. Monitoring - Prometheus Metrics Scraper
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: stayease-prometheus
+    restart: unless-stopped
+    volumes:
+      - ../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../monitoring/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - hotel-network
+
+  # 5. Monitoring Visualization - Grafana
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: stayease-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin_grafana_2026
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ../monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ../monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - hotel-network
+
+volumes:
+  db_data:
+  grafana_data:
+
+networks:
+  hotel-network:
+    driver: bridge

@@ -1,0 +1,36 @@
+# ==========================================================
+# StayEase Hotel Booking - Global Ansible Group Variables
+# ==========================================================
+
+project_name: "stayease"
+project_title: "Infrastructure Automation for Hotel Booking System"
+environment_name: "production"
+
+# Docker image registry / repository references
+docker_image_backend: "stayease/hotel-backend:latest"
+docker_image_frontend: "stayease/hotel-frontend:latest"
+docker_compose_version: "v2.24.5"
+
+# Application runtime configuration
+app_port: 5000
+web_port: 80
+db_port: 3306
+db_name: "hotel_booking_db"
+db_user: "hotel_user"
+
+# Prometheus metrics & monitoring
+prometheus_port: 9090
+node_exporter_port: 9100
+grafana_port: 3001
+
+# System packages to ensure on every node
+system_packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+  - git
+  - htop
+  - net-tools
+  - ufw

@@ -1,0 +1,22 @@
+---
+# Tasks for role: common
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install required core utilities
+  apt:
+    name: "{{ system_packages }}"
+    state: present
+
+- name: Set system timezone to UTC
+  timezone:
+    name: UTC
+
+- name: Increase max open file limits (sysctl)
+  sysctl:
+    name: fs.file-max
+    value: '2097152'
+    state: present
+    reload: yes

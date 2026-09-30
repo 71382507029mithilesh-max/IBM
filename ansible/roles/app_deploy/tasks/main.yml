@@ -1,0 +1,48 @@
+---
+# Tasks for role: app_deploy
+- name: Create application deployment directory
+  file:
+    path: /opt/stayease
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Deploy application environment variables (.env)
+  copy:
+    dest: /opt/stayease/.env
+    content: |
+      FLASK_ENV=production
+      PORT=5000
+      DB_HOST={{ hostvars['db-primary']['ansible_host'] | default('10.0.21.50') }}
+      DB_PORT=3306
+      DB_USER=hotel_user
+      DB_PASSWORD=hotel_password_secure_2026
+      DB_NAME=hotel_booking_db
+      SECRET_KEY=stayease-ansible-deploy-secret-2026
+      JWT_SECRET_KEY=stayease-jwt-ansible-secret-2026
+    mode: '0600'
+
+- name: Copy docker-compose deployment specification
+  copy:
+    src: ../../docker/docker-compose.yml
+    dest: /opt/stayease/docker-compose.yml
+    mode: '0644'
+
+- name: Pull and start application microservices
+  command: docker compose -f /opt/stayease/docker-compose.yml up -d --remove-orphans
+  register: compose_up
+  changed_when: "'Creating' in compose_up.stdout or 'Starting' in compose_up.stdout"
+
+- name: Wait for StayEase Health Check to pass (HTTP 200)
+  uri:
+    url: "http://localhost:5000/health"
+    status_code: 200
+  register: health_result
+  until: health_result.status == 200
+  retries: 10
+  delay: 5
+
+- name: Log deployment health status
+  debug:
+    msg: "StayEase backend API confirmed healthy on node {{ ansible_hostname }}"

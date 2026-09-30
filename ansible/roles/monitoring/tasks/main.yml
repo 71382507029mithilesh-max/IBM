@@ -1,0 +1,23 @@
+---
+# Tasks for role: monitoring
+- name: Ensure Prometheus Node Exporter container is active
+  command: >
+    docker run -d
+    --name=node-exporter
+    --restart=unless-stopped
+    --net="host"
+    --pid="host"
+    -v "/:/host:ro,rslave"
+    quay.io/prometheus/node-exporter:latest
+    --path.rootfs=/host
+  register: node_exporter_run
+  failed_when: false
+  changed_when: node_exporter_run.rc == 0
+
+- name: Verify Node Exporter endpoint responds on port 9100
+  uri:
+    url: "http://localhost:9100/metrics"
+    status_code: 200
+  register: exporter_check
+  retries: 5
+  delay: 3
