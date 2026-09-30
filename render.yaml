@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: stayease-hotel-booking
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: python run_local.py
+    healthCheckPath: /health
+    plan: free
+    autoDeploy: true
